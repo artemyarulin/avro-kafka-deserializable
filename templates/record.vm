@@ -26,6 +26,9 @@ import org.apache.avro.util.Utf8;
 import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.BinaryMessageDecoder;
 import org.apache.avro.message.SchemaStore;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serializer;
 #end
 
 #if ($schema.getDoc())
@@ -35,10 +38,76 @@ import org.apache.avro.message.SchemaStore;
 @$annotation
 #end
 @org.apache.avro.specific.AvroGenerated
-public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends org.apache.avro.specific.SpecificExceptionBase#else extends org.apache.avro.specific.SpecificRecordBase#end implements org.apache.avro.specific.SpecificRecord {
+public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends org.apache.avro.specific.SpecificExceptionBase#else extends org.apache.avro.specific.SpecificRecordBase#end implements org.apache.avro.specific.SpecificRecord, Deserializer<${this.mangle($schema.getName())}>, Serializer<${this.mangle($schema.getName())}>, Serde<${this.mangle($schema.getName())}> {
   private static final long serialVersionUID = ${this.fingerprint64($schema)}L;
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse(${this.javaSplit($schema.toString())});
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
+
+  @Override
+  public void configure(Map<String, ?> configs, boolean isKey) {
+
+  }
+
+  @Override
+  public void close() {
+
+  }
+
+  @Override
+  public Serializer<DownloadResult> serializer() {
+    return this;
+  }
+
+  @Override
+  public Deserializer<DownloadResult> deserializer() {
+    return this;
+  }
+
+  @Override
+  public byte[] serialize(String topic, DownloadResult data) {
+    try {
+      byte[] result = null;
+
+      if (data != null) {
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BinaryEncoder binaryEncoder =
+                EncoderFactory.get().binaryEncoder(byteArrayOutputStream, null);
+
+        DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(data.getSchema());
+        datumWriter.write(data, binaryEncoder);
+
+        binaryEncoder.flush();
+        byteArrayOutputStream.close();
+
+        result = byteArrayOutputStream.toByteArray();
+      }
+      return result;
+    } catch (IOException ex) {
+      throw new IllegalArgumentException(
+              "Can't serialize data='" + data + "' for topic='" + topic + "'", ex);
+    }
+  }
+
+  @Override
+  public DownloadResult deserialize(String topic, byte[] data) {
+    try {
+      DownloadResult result = null;
+
+      if (data != null) {
+
+        DatumReader<GenericRecord> datumReader =
+                new SpecificDatumReader<>(DownloadResult.class.newInstance().getSchema());
+        Decoder decoder = DecoderFactory.get().binaryDecoder(data, null);
+
+        result = (DownloadResult) datumReader.read(null, decoder);
+      }
+      return result;
+    } catch (Exception ex) {
+      throw new IllegalArgumentException(
+              "Can't deserialize data '" + Arrays.toString(data) + "' from topic '" + topic + "'", ex);
+    }
+  }
 
   private static SpecificData MODEL$ = new SpecificData();
 
