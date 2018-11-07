@@ -13,7 +13,7 @@ docker run -v $PWD/test/schemas:/srv artemyarulin/avro-kafka-deserializable
 
 ## How does it work
 
-By using custom [Java Avro template](templates/records.vm) + avro-tools CLI compile call + https://github.com/apache/avro/pull/366
+By using custom [Java Avro template](templates/record.vm) + avro-tools CLI compile call + https://github.com/apache/avro/pull/366
 
 ## Do I need Schema Registry?
 
