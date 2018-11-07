@@ -10,7 +10,6 @@ USER root
 COPY --from=0 /avro/lang/java/tools/target/avro-tools-1.9.0-SNAPSHOT.jar app.jar
 COPY test test/
 COPY templates /templates/
-RUN find .
 RUN java -jar app.jar compile -templateDir /templates/ schema test/schemas/Company.json test/src/main/java
 RUN cd test && gradle test
 
