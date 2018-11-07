@@ -19,18 +19,32 @@
 package $schema.getNamespace();
 #end
 
-import org.apache.avro.generic.GenericArray;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.util.Utf8;
 #if (!$schema.isError())
-import org.apache.avro.message.BinaryMessageEncoder;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.message.BinaryMessageDecoder;
+import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.SchemaStore;
+import org.apache.avro.specific.SpecificData;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
 #end
 
+@SuppressWarnings("all")
 #if ($schema.getDoc())
 /** $schema.getDoc() */
 #end
@@ -43,6 +57,8 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse(${this.javaSplit($schema.toString())});
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
+  private static SpecificData MODEL$ = new SpecificData();
+
   @Override
   public void configure(Map<String, ?> configs, boolean isKey) {
 
@@ -54,17 +70,17 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   }
 
   @Override
-  public Serializer<DownloadResult> serializer() {
+  public Serializer<${this.mangle($schema.getName())}> serializer() {
     return this;
   }
 
   @Override
-  public Deserializer<DownloadResult> deserializer() {
+  public Deserializer<${this.mangle($schema.getName())}> deserializer() {
     return this;
   }
 
   @Override
-  public byte[] serialize(String topic, DownloadResult data) {
+  public byte[] serialize(String topic, ${this.mangle($schema.getName())} data) {
     try {
       byte[] result = null;
 
@@ -90,17 +106,17 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   }
 
   @Override
-  public DownloadResult deserialize(String topic, byte[] data) {
+  public ${this.mangle($schema.getName())} deserialize(String topic, byte[] data) {
     try {
-      DownloadResult result = null;
+      ${this.mangle($schema.getName())} result = null;
 
       if (data != null) {
 
         DatumReader<GenericRecord> datumReader =
-                new SpecificDatumReader<>(DownloadResult.class.newInstance().getSchema());
+                new SpecificDatumReader<>(${this.mangle($schema.getName())}.class.newInstance().getSchema());
         Decoder decoder = DecoderFactory.get().binaryDecoder(data, null);
 
-        result = (DownloadResult) datumReader.read(null, decoder);
+        result = (${this.mangle($schema.getName())}) datumReader.read(null, decoder);
       }
       return result;
     } catch (Exception ex) {
@@ -109,7 +125,6 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
     }
   }
 
-  private static SpecificData MODEL$ = new SpecificData();
 
 #if (!$schema.isError())
   private static final BinaryMessageEncoder<${this.mangle($schema.getName())}> ENCODER =
@@ -120,7 +135,6 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
 
   /**
    * Return the BinaryMessageDecoder instance used by this class.
-   * @return the message decoder used by this class
    */
   public static BinaryMessageDecoder<${this.mangle($schema.getName())}> getDecoder() {
     return DECODER;
@@ -129,27 +143,17 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   /**
    * Create a new BinaryMessageDecoder instance for this class that uses the specified {@link SchemaStore}.
    * @param resolver a {@link SchemaStore} used to find schemas by fingerprint
-   * @return a BinaryMessageDecoder instance for this class backed by the given SchemaStore
    */
   public static BinaryMessageDecoder<${this.mangle($schema.getName())}> createDecoder(SchemaStore resolver) {
     return new BinaryMessageDecoder<${this.mangle($schema.getName())}>(MODEL$, SCHEMA$, resolver);
   }
 
-  /**
-   * Serializes this ${schema.getName()} to a ByteBuffer.
-   * @return a buffer holding the serialized data for this instance
-   * @throws java.io.IOException if this instance could not be serialized
-   */
+  /** Serializes this ${schema.getName()} to a ByteBuffer. */
   public java.nio.ByteBuffer toByteBuffer() throws java.io.IOException {
     return ENCODER.encode(this);
   }
 
-  /**
-   * Deserializes a ${schema.getName()} from a ByteBuffer.
-   * @param b a byte buffer holding serialized data for an instance of this class
-   * @return a ${schema.getName()} instance decoded from the given buffer
-   * @throws java.io.IOException if the given bytes could not be deserialized into an instance of this class
-   */
+  /** Deserializes a ${schema.getName()} from a ByteBuffer. */
   public static ${this.mangle($schema.getName())} fromByteBuffer(
       java.nio.ByteBuffer b) throws java.io.IOException {
     return DECODER.decode(b);
@@ -232,16 +236,10 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   }
 
 #if ($this.hasLogicalTypeField($schema))
-  protected static final org.apache.avro.Conversions.DecimalConversion DECIMAL_CONVERSION = new org.apache.avro.Conversions.DecimalConversion();
-#if ($this.getDateTimeLogicalTypeImplementation().name() == "JODA")
   protected static final org.apache.avro.data.TimeConversions.DateConversion DATE_CONVERSION = new org.apache.avro.data.TimeConversions.DateConversion();
   protected static final org.apache.avro.data.TimeConversions.TimeConversion TIME_CONVERSION = new org.apache.avro.data.TimeConversions.TimeConversion();
   protected static final org.apache.avro.data.TimeConversions.TimestampConversion TIMESTAMP_CONVERSION = new org.apache.avro.data.TimeConversions.TimestampConversion();
-#elseif ($this.getDateTimeLogicalTypeImplementation().name() == "JSR310")
-  protected static final org.apache.avro.data.Jsr310TimeConversions.DateConversion DATE_CONVERSION = new org.apache.avro.data.Jsr310TimeConversions.DateConversion();
-  protected static final org.apache.avro.data.Jsr310TimeConversions.TimeMillisConversion TIME_CONVERSION = new org.apache.avro.data.Jsr310TimeConversions.TimeMillisConversion();
-  protected static final org.apache.avro.data.Jsr310TimeConversions.TimestampMillisConversion TIMESTAMP_CONVERSION = new org.apache.avro.data.Jsr310TimeConversions.TimestampMillisConversion();
-#end
+  protected static final org.apache.avro.Conversions.DecimalConversion DECIMAL_CONVERSION = new org.apache.avro.Conversions.DecimalConversion();
 
   private static final org.apache.avro.Conversion<?>[] conversions =
       new org.apache.avro.Conversion<?>[] {
@@ -263,7 +261,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
     switch (field$) {
 #set ($i = 0)
 #foreach ($field in $schema.getFields())
-    case $i: ${this.mangle($field.name(), $schema.isError())} = #if(${this.javaType($field.schema())} != "java.lang.Object")(${this.javaType($field.schema())})#{end}value$; break;
+    case $i: ${this.mangle($field.name(), $schema.isError())} = (${this.javaType($field.schema())})value$; break;
 #set ($i = $i + 1)
 #end
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
@@ -308,11 +306,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
    * @return A new ${this.mangle($schema.getName())} RecordBuilder
    */
   public static #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder newBuilder(#if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder other) {
-    if (other == null) {
-      return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder();
-    } else {
-      return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder(other);
-    }
+    return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder(other);
   }
 
   /**
@@ -321,11 +315,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
    * @return A new ${this.mangle($schema.getName())} RecordBuilder
    */
   public static #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder newBuilder(#if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())} other) {
-    if (other == null) {
-      return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder();
-    } else {
-      return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder(other);
-    }
+    return new #if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())}.Builder(other);
   }
 
   /**
@@ -359,7 +349,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
 #foreach ($field in $schema.getFields())
       if (isValidValue(fields()[$field.pos()], other.${this.mangle($field.name(), $schema.isError())})) {
         this.${this.mangle($field.name(), $schema.isError())} = data().deepCopy(fields()[$field.pos()].schema(), other.${this.mangle($field.name(), $schema.isError())});
-        fieldSetFlags()[$field.pos()] = other.fieldSetFlags()[$field.pos()];
+        fieldSetFlags()[$field.pos()] = true;
       }
 #if (${this.hasBuilder($field.schema())})
       if (other.${this.generateHasBuilderMethod($schema, $field)}()) {
@@ -374,7 +364,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
      * @param other The existing instance to copy.
      */
     private Builder(#if ($schema.getNamespace())$schema.getNamespace().#end${this.mangle($schema.getName())} other) {
-#if ($schema.isError())      super(other)#else
+      #if ($schema.isError())super(other)#else
       super(SCHEMA$)#end;
 #foreach ($field in $schema.getFields())
       if (isValidValue(fields()[$field.pos()], other.${this.mangle($field.name(), $schema.isError())})) {
@@ -519,30 +509,23 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
 #foreach ($field in $schema.getFields())
 #if (${this.hasBuilder($field.schema())})
         if (${this.mangle($field.name(), $schema.isError())}Builder != null) {
-          try {
-            record.${this.mangle($field.name(), $schema.isError())} = this.${this.mangle($field.name(), $schema.isError())}Builder.build();
-          } catch (org.apache.avro.AvroMissingFieldException e) {
-            e.addParentField(record.getSchema().getField("${this.mangle($field.name(), $schema.isError())}"));
-            throw e;
-          }
+          record.${this.mangle($field.name(), $schema.isError())} = this.${this.mangle($field.name(), $schema.isError())}Builder.build();
         } else {
 #if ($this.hasLogicalTypeField($schema))
-          record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : #if(${this.javaType($field.schema())} != "java.lang.Object")(${this.javaType($field.schema())})#{end} defaultValue(fields()[$field.pos()], record.getConversion($field.pos()));
+          record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : (${this.javaType($field.schema())}) defaultValue(fields()[$field.pos()], record.getConversion($field.pos()));
 #else
-          record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : #if(${this.javaType($field.schema())} != "java.lang.Object")(${this.javaType($field.schema())})#{end} defaultValue(fields()[$field.pos()]);
+          record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : (${this.javaType($field.schema())}) defaultValue(fields()[$field.pos()]);
 #end
         }
 #else
 #if ($this.hasLogicalTypeField($schema))
-        record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : #if(${this.javaType($field.schema())} != "java.lang.Object")(${this.javaType($field.schema())})#{end} defaultValue(fields()[$field.pos()], record.getConversion($field.pos()));
+        record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : (${this.javaType($field.schema())}) defaultValue(fields()[$field.pos()], record.getConversion($field.pos()));
 #else
-        record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : #if(${this.javaType($field.schema())} != "java.lang.Object")(${this.javaType($field.schema())})#{end} defaultValue(fields()[$field.pos()]);
+        record.${this.mangle($field.name(), $schema.isError())} = fieldSetFlags()[$field.pos()] ? this.${this.mangle($field.name(), $schema.isError())} : (${this.javaType($field.schema())}) defaultValue(fields()[$field.pos()]);
 #end
 #end
 #end
         return record;
-      } catch (org.apache.avro.AvroMissingFieldException e) {
-        throw e;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);
       }
@@ -567,294 +550,4 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
     READER$.read(this, SpecificData.getDecoder(in));
   }
 
-#if ($this.isCustomCodable($schema))
-  @Override protected boolean hasCustomCoders() { return true; }
-
-  @Override protected void customEncode(org.apache.avro.io.Encoder out)
-    throws java.io.IOException
-  {
-#set ($nv = 0)## Counter to ensure unique var-names
-#set ($maxnv = 0)## Holds high-water mark during recursion
-#foreach ($field in $schema.getFields())
-#set ($n = $this.mangle($field.name(), $schema.isError()))
-#set ($s = $field.schema())
-#encodeVar(0 "this.${n}" $s)
-
-#set ($nv = $maxnv)
-#end
-  }
-
-  @Override protected void customDecode(org.apache.avro.io.ResolvingDecoder in)
-    throws java.io.IOException
-  {
-    org.apache.avro.Schema.Field[] fieldOrder = in.readFieldOrder();
-    for (int i = 0; i < $schema.getFields().size(); i++) {
-      switch (fieldOrder[i].pos()) {
-#set ($fieldno = 0)
-#set ($nv = 0)## Counter to ensure unique var-names
-#set ($maxnv = 0)## Holds high-water mark during recursion
-#foreach ($field in $schema.getFields())
-      case $fieldno:
-#set ($n = $this.mangle($field.name(), $schema.isError()))
-#set ($s = $field.schema())
-#set ($rs = "SCHEMA$.getField(""${n}"").schema()")
-#decodeVar(4 "this.${n}" $s $rs)
-        break;
-
-#set ($nv = $maxnv)
-#set ($fieldno = $fieldno + 1)
-#end
-      default:
-        throw new java.io.IOException("Corrupt ResolvingDecoder.");
-      }
-    }
-  }
-#end
 }
-
-#macro( encodeVar $indent $var $s )
-#set ($I = $this.indent($indent))
-##### Compound types (array, map, and union) require calls
-##### that will recurse back into this encodeVar macro:
-#if ($s.Type.Name.equals("array"))
-#encodeArray($indent $var $s)
-#elseif ($s.Type.Name.equals("map"))
-#encodeMap($indent $var $s)
-#elseif ($s.Type.Name.equals("union"))
-#encodeUnion($indent $var $s)
-##### Use the generated "encode" method as fast way to write
-##### (specific) record types:
-#elseif ($s.Type.Name.equals("record"))
-$I    ${var}.customEncode(out);
-##### For rest of cases, generate calls out.writeXYZ:
-#elseif ($s.Type.Name.equals("null"))
-$I    out.writeNull();
-#elseif ($s.Type.Name.equals("boolean"))
-$I    out.writeBoolean(${var});
-#elseif ($s.Type.Name.equals("int"))
-$I    out.writeInt(${var});
-#elseif ($s.Type.Name.equals("long"))
-$I    out.writeLong(${var});
-#elseif ($s.Type.Name.equals("float"))
-$I    out.writeFloat(${var});
-#elseif ($s.Type.Name.equals("double"))
-$I    out.writeDouble(${var});
-#elseif ($s.Type.Name.equals("string"))
-#if ($this.isStringable($s))
-$I    out.writeString(${var}.toString());
-#else
-$I    out.writeString(${var});
-#end
-#elseif ($s.Type.Name.equals("bytes"))
-$I    out.writeBytes(${var});
-#elseif ($s.Type.Name.equals("fixed"))
-$I    out.writeFixed(${var}.bytes(), 0, ${s.FixedSize});
-#elseif ($s.Type.Name.equals("enum"))
-$I    out.writeEnum(${var}.ordinal());
-#else
-## TODO -- singal a code-gen-time error
-#end
-#end
-
-#macro( encodeArray $indent $var $s )
-#set ($I = $this.indent($indent))
-#set ($et = $this.javaType($s.ElementType))
-$I    long size${nv} = ${var}.size();
-$I    out.writeArrayStart();
-$I    out.setItemCount(size${nv});
-$I    long actualSize${nv} = 0;
-$I    for ($et e${nv}: ${var}) {
-$I      actualSize${nv}++;
-$I      out.startItem();
-#set ($var = "e${nv}")
-#set ($nv = $nv + 1)
-#set ($maxnv = $nv)
-#set ($indent = $indent + 2)
-#encodeVar($indent $var $s.ElementType)
-#set ($nv = $nv - 1)
-#set ($indent = $indent - 2)
-#set ($I = $this.indent($indent))
-$I    }
-$I    out.writeArrayEnd();
-$I    if (actualSize${nv} != size${nv})
-$I      throw new java.util.ConcurrentModificationException("Array-size written was " + size${nv} + ", but element count was " + actualSize${nv} + ".");
-#end
-
-#macro( encodeMap $indent $var $s )
-#set ($I = $this.indent($indent))
-#set ($kt = $this.getStringType($s))
-#set ($vt = $this.javaType($s.ValueType))
-$I    long size${nv} = ${var}.size();
-$I    out.writeMapStart();
-$I    out.setItemCount(size${nv});
-$I    long actualSize${nv} = 0;
-$I    for (java.util.Map.Entry<$kt, $vt> e${nv}: ${var}.entrySet()) {
-$I      actualSize${nv}++;
-$I      out.startItem();
-#if ($this.isStringable($s))
-$I      out.writeString(e${nv}.getKey().toString());
-#else
-$I      out.writeString(e${nv}.getKey());
-#end
-$I      $vt v${nv} = e${nv}.getValue();
-#set ($var = "v${nv}")
-#set ($nv = $nv + 1)
-#set ($maxnv = $nv)
-#set ($indent = $indent + 2)
-#encodeVar($indent $var $s.ValueType)
-#set ($nv = $nv - 1)
-#set ($indent = $indent - 2)
-#set ($I = $this.indent($indent))
-$I    }
-$I    out.writeMapEnd();
-$I    if (actualSize${nv} != size${nv})
-      throw new java.util.ConcurrentModificationException("Map-size written was " + size${nv} + ", but element count was " + actualSize${nv} + ".");
-#end
-
-#macro( encodeUnion $indent $var $s )
-#set ($I = $this.indent($indent))
-#set ($et = $this.javaType($s.Types.get($this.getNonNullIndex($s))))
-$I    if (${var} == null) {
-$I      out.writeIndex(#if($this.getNonNullIndex($s)==0)1#{else}0#end);
-$I      out.writeNull();
-$I    } else {
-$I      out.writeIndex(${this.getNonNullIndex($s)});
-#set ($indent = $indent + 2)
-#encodeVar($indent $var $s.Types.get($this.getNonNullIndex($s)))
-#set ($indent = $indent - 2)
-#set ($I = $this.indent($indent))
-$I    }
-#end
-
-
-#macro( decodeVar $indent $var $s $rs )
-#set ($I = $this.indent($indent))
-##### Compound types (array, map, and union) require calls
-##### that will recurse back into this decodeVar macro:
-#if ($s.Type.Name.equals("array"))
-#decodeArray($indent $var $s $rs)
-#elseif ($s.Type.Name.equals("map"))
-#decodeMap($indent $var $s $rs)
-#elseif ($s.Type.Name.equals("union"))
-#decodeUnion($indent $var $s $rs)
-##### Use the generated "decode" method as fast way to write
-##### (specific) record types:
-#elseif ($s.Type.Name.equals("record"))
-$I    if (${var} == null) {
-$I      ${var} = new ${this.javaType($s)}();
-$I    }
-$I    ${var}.customDecode(in);
-##### For rest of cases, generate calls in.readXYZ:
-#elseif ($s.Type.Name.equals("null"))
-$I    in.readNull();
-#elseif ($s.Type.Name.equals("boolean"))
-$I    $var = in.readBoolean();
-#elseif ($s.Type.Name.equals("int"))
-$I    $var = in.readInt();
-#elseif ($s.Type.Name.equals("long"))
-$I    $var = in.readLong();
-#elseif ($s.Type.Name.equals("float"))
-$I    $var = in.readFloat();
-#elseif ($s.Type.Name.equals("double"))
-$I    $var = in.readDouble();
-#elseif ($s.Type.Name.equals("string"))
-#decodeString( "$I" $var $s )
-#elseif ($s.Type.Name.equals("bytes"))
-$I    $var = in.readBytes(${var});
-#elseif ($s.Type.Name.equals("fixed"))
-$I    if (${var} == null) {
-$I      ${var} = new ${this.javaType($s)}();
-$I    }
-$I    in.readFixed(${var}.bytes(), 0, ${s.FixedSize});
-#elseif ($s.Type.Name.equals("enum"))
-$I    $var = ${this.javaType($s)}.values()[in.readEnum()];
-#else
-## TODO -- singal a code-gen-time error
-#end
-#end
-
-#macro( decodeString $II $var $s )
-#set ($st = ${this.getStringType($s)})
-#if ($this.isStringable($s))
-$II    ${var} = new ${st}(in.readString());
-#elseif ($st.equals("java.lang.String"))
-$II    $var = in.readString();
-#elseif ($st.equals("org.apache.avro.util.Utf8"))
-$II    $var = in.readString(${var});
-#else
-$II    $var = in.readString(${var} instanceof Utf8 ? (Utf8)${var} : null);
-#end
-#end
-
-#macro( decodeArray $indent $var $s $rs )
-#set ($I = $this.indent($indent))
-#set ($t = $this.javaType($s))
-#set ($et = $this.javaType($s.ElementType))
-#set ($gat = "SpecificData.Array<${et}>")
-$I    long size${nv} = in.readArrayStart();
-## Need fresh variable name due to limitation of macro system
-$I    $t a${nv} = ${var};
-$I    if (a${nv} == null) {
-$I      a${nv} = new ${gat}((int)size${nv}, ${rs});
-$I      $var = a${nv};
-$I    } else a${nv}.clear();
-$I    $gat ga${nv} = (a${nv} instanceof SpecificData.Array ? (${gat})a${nv} : null);
-$I    for ( ; 0 < size${nv}; size${nv} = in.arrayNext()) {
-$I      for ( ; size${nv} != 0; size${nv}--) {
-$I        $et e${nv} = (ga${nv} != null ? ga${nv}.peek() : null);
-#set ($var = "e${nv}")
-#set ($nv = $nv + 1)
-#set ($maxnv = $nv)
-#set ($indent = $indent + 4)
-#decodeVar($indent $var $s.ElementType "${rs}.getElementType()")
-#set ($nv = $nv - 1)
-#set ($indent = $indent - 4)
-#set ($I = $this.indent($indent))
-$I        a${nv}.add(e${nv});
-$I      }
-$I    }
-#end
-
-#macro( decodeMap $indent $var $s $rs )
-#set ($I = $this.indent($indent))
-#set ($t = $this.javaType($s))
-#set ($kt = $this.getStringType($s))
-#set ($vt = $this.javaType($s.ValueType))
-$I    long size${nv} = in.readMapStart();
-$I    $t m${nv} = ${var}; // Need fresh name due to limitation of macro system
-$I    if (m${nv} == null) {
-$I      m${nv} = new java.util.HashMap<${kt},${vt}>((int)size${nv});
-$I      $var = m${nv};
-$I    } else m${nv}.clear();
-$I    for ( ; 0 < size${nv}; size${nv} = in.mapNext()) {
-$I      for ( ; size${nv} != 0; size${nv}--) {
-$I        $kt k${nv} = null;
-#decodeString( "$I    " "k${nv}" $s )
-$I        $vt v${nv} = null;
-#set ($var = "v${nv}")
-#set ($nv = $nv + 1)
-#set ($maxnv = $nv)
-#set ($indent = $indent + 4)
-#decodeVar($indent $var $s.ValueType "${rs}.getValueType()")
-#set ($nv = $nv - 1)
-#set ($indent = $indent - 4)
-#set ($I = $this.indent($indent))
-$I        m${nv}.put(k${nv}, v${nv});
-$I      }
-$I    }
-#end
-
-#macro( decodeUnion $indent $var $s $rs )
-#set ($I = $this.indent($indent))
-#set ($et = $this.javaType($s.Types.get($this.getNonNullIndex($s))))
-#set ($si = $this.getNonNullIndex($s))
-$I    if (in.readIndex() != ${si}) {
-$I      in.readNull();
-$I      ${var} = null;
-$I    } else {
-#set ($indent = $indent + 2)
-#decodeVar($indent $var $s.Types.get($si) "${rs}.getTypes().get(${si})")
-#set ($indent = $indent - 2)
-#set ($I = $this.indent($indent))
-$I    }
-#end

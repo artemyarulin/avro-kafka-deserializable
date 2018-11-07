@@ -19,6 +19,7 @@
 package $protocol.getNamespace();
 #end
 
+@SuppressWarnings("all")
 #if ($protocol.getDoc())
 /** $protocol.getDoc() */
 #end
