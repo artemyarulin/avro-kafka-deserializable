@@ -1,9 +1,12 @@
 ## avro-kafka-deserializable
 
-Generate Java classes from Avro definitions which automatically has implementation of Serialiser<T>, Deserialiser<T> and Serde<T> and use it right away in Kafka and Kafka Streams
+Generate Java classes from Avro definitions which automatically has implementation of `Serialiser<T>`, `Deserialiser<T>` and `Serde<T>` and use it right away in Kafka and Kafka Streams
 
 ## How to use that
 
+Using Docker. Just run `artemyarulin/avro-kafka-deserializable`, mount your folder with Arvo JSON definitions to `srv` and Java files will be generated there as well
+
+Example:
 ```bash
 docker run -v $PWD/test/schemas:/srv artemyarulin/avro-kafka-deserializable
 ```
