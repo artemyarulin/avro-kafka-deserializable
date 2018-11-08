@@ -10,8 +10,8 @@ USER root
 COPY --from=0 /avro/lang/java/tools/target/avro-tools-1.9.0-SNAPSHOT.jar app.jar
 COPY test test/
 COPY templates /templates/
-RUN java -jar app.jar compile -templateDir /templates/ schema test/schemas/Company.json test/src/main/java
-RUN cd test && gradle test --no-daemon --console plain --info
+RUN java -jar app.jar compile -templateDir /templates/ schema test/schemas/*.json test/src/main/java
+RUN cd test && gradle test --no-daemon --console plain
 
 ### Bundle
 FROM openjdk:8u181-jdk-alpine3.8

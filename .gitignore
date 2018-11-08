@@ -1,3 +1,5 @@
 .gradle
 .idea
 Company.java
+test/build
+test/src/main/java/example

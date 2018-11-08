@@ -47,7 +47,7 @@ Here is a diff of changes that were done for `record.vm`
 > import org.apache.kafka.common.serialization.Deserializer;
 > import org.apache.kafka.common.serialization.Serde;
 > import org.apache.kafka.common.serialization.Serializer;
-> 
+>
 > import java.io.ByteArrayOutputStream;
 > import java.io.IOException;
 > import java.util.Arrays;
@@ -56,72 +56,44 @@ Here is a diff of changes that were done for `record.vm`
 < public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends org.apache.avro.specific.SpecificExceptionBase#else extends org.apache.avro.specific.SpecificRecordBase#end implements org.apache.avro.specific.SpecificRecord {
 ---
 > public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends org.apache.avro.specific.SpecificExceptionBase#else extends org.apache.avro.specific.SpecificRecordBase#end implements org.apache.avro.specific.SpecificRecord, Deserializer<${this.mangle($schema.getName())}>, Serializer<${this.mangle($schema.getName())}>, Serde<${this.mangle($schema.getName())}> {
-43a62,128
+43a62,100
 >   @Override
 >   public void configure(Map<String, ?> configs, boolean isKey) {
-> 
+>
 >   }
-> 
+>
 >   @Override
 >   public void close() {
-> 
+>
 >   }
-> 
+>
 >   @Override
 >   public Serializer<${this.mangle($schema.getName())}> serializer() {
 >     return this;
 >   }
-> 
+>
 >   @Override
 >   public Deserializer<${this.mangle($schema.getName())}> deserializer() {
 >     return this;
 >   }
-> 
+>
 >   @Override
 >   public byte[] serialize(String topic, ${this.mangle($schema.getName())} data) {
 >     try {
->       byte[] result = null;
-> 
->       if (data != null) {
-> 
->         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
->         BinaryEncoder binaryEncoder =
->                 EncoderFactory.get().binaryEncoder(byteArrayOutputStream, null);
-> 
->         DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(data.getSchema());
->         datumWriter.write(data, binaryEncoder);
-> 
->         binaryEncoder.flush();
->         byteArrayOutputStream.close();
-> 
->         result = byteArrayOutputStream.toByteArray();
->       }
->       return result;
->     } catch (IOException ex) {
->       throw new IllegalArgumentException(
->               "Can't serialize data='" + data + "' for topic='" + topic + "'", ex);
+>       return ${this.mangle($schema.getName())}.ENCODER.encode(data).array();
+>     } catch (IOException e) {
+>       throw new IllegalArgumentException(e);
 >     }
 >   }
-> 
+>
 >   @Override
 >   public ${this.mangle($schema.getName())} deserialize(String topic, byte[] data) {
 >     try {
->       ${this.mangle($schema.getName())} result = null;
-> 
->       if (data != null) {
-> 
->         DatumReader<GenericRecord> datumReader =
->                 new SpecificDatumReader<>(${this.mangle($schema.getName())}.class.newInstance().getSchema());
->         Decoder decoder = DecoderFactory.get().binaryDecoder(data, null);
-> 
->         result = (${this.mangle($schema.getName())}) datumReader.read(null, decoder);
->       }
->       return result;
->     } catch (Exception ex) {
->       throw new IllegalArgumentException(
->               "Can't deserialize data '" + Arrays.toString(data) + "' from topic '" + topic + "'", ex);
+>       return ${this.mangle($schema.getName())}.DECODER.decode(data);
+>     } catch (IOException e) {
+>       throw new IllegalArgumentException(e);
 >     }
 >   }
-> 
-> 
+>
+>
 ```

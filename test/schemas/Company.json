@@ -1,8 +1,9 @@
 {
-  "namespace": "example",
+  "namespace": "example.one",
   "type": "record",
   "name": "Company",
   "fields": [
-    {"name": "name", "type": "string"}
+    {"name": "name", "type": "string"},
+    {"name": "dep", "type": {"type": "enum", "name": "Department", "symbols": ["IT", "DC"] }}
   ]
 }
